@@ -12,69 +12,57 @@ public class Games {
     Api api = new Api();
     Teams team = new Teams();
     public HashMap<String, Object> getPlayersPoints(int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
-        int teamId = team.getTeamId(teamName);
-        int oppTeamId = team.getTeamId(opponentTeamName);
+        String teamId = team.getTeamId(teamName);
+        String oppTeamId = team.getTeamId(opponentTeamName);
         String h2h = teamId + "-" + oppTeamId;
 
-        List<Map<String, Object>> gamesList = api.getGamesList(season, h2h);
+        HashMap<String, Object> gamesList = (HashMap<String, Object>) api.getGamesList(season, h2h);
 
         HashMap<String, Object> playerPointsList = new HashMap<>();
 
-        for (Map<String, Object> gamesMap : gamesList) {
-            double doubleGameId = (Double) gamesMap.get("id");
-            int gameId = (int) doubleGameId;
-            Map<String, Object> teams = (Map<String, Object>) gamesMap.get("teams");
-            Map<String, Object> visitors = (Map<String, Object>) teams.get("visitors");
-            Map<String, Object> home = (Map<String, Object>) teams.get("home");
-            Map<String, Object> date = (Map<String, Object>) gamesMap.get("date");
-            double doubleVisitorId = (Double) visitors.get("id");
-            double doubleHomeId = (Double) home.get("id");
-            int visitorId = (int) doubleVisitorId;
-            int homeId = (int) doubleHomeId;
-            String startDate = (String) date.get("start");
-
-            List<Map<String, Object>> teamStats = (List<Map<String, Object>>) api.getPlayersStatistics(season, teamId, gameId);
-            for (Map<String, Object> teamData : teamStats) {
-                Map<String, Object> teamMap = (Map<String, Object>) teamData.get("team");
-                double doublePlayersTeamId = (Double) teamMap.get("id");
-                int playersTeamId = (int) doublePlayersTeamId;
-                Map<String, Object> teamPlayerMap = (Map<String, Object>) teamData.get("player");
-                String fName = (String) teamPlayerMap.get("firstname");
-                String lName = (String) teamPlayerMap.get("lastname");
-                double doublePlayersPoints = (Double) teamData.get("points");
-                int playerPoints = (int) doublePlayersPoints;
-                if (playersTeamId == visitorId) {
-                    playerPointsList.put("Visiting [" + gameId + "] " + startDate + " " + fName + " " + lName + " " + teamName, playerPoints);
-                } else if (playersTeamId == homeId) {
-                    playerPointsList.put("Home [" + gameId + "] " + startDate + " " + fName + " " + lName + " " + teamName, playerPoints);
+        for (String gamesMap : gamesList.keySet()) {
+            if (gamesMap.contains("Home")) {
+                String homeId = String.valueOf(gamesList.get(gamesMap));
+                String[] parts = gamesMap.split(" ");
+                String homeGameId = parts[0];
+                String date = parts[parts.length - 1];
+                HashMap<String, Object> teamStats = (HashMap<String, Object>) api.getPlayersStatistics(season, homeId, homeGameId);
+                for (String teamData : teamStats.keySet()) {
+                    if (teamData.contains(homeGameId)) {
+                        int homePoints = (int) teamStats.get(teamData);
+                        String[] teamParts = teamData.split(" ");
+                        String homeFName = teamParts[1];
+                        String homeLName = teamParts[2];
+                        String homeTeamName = teamParts[teamParts.length - 1] + " " + teamParts[teamParts.length - 2];
+                        playerPointsList.put("Home [" + homeGameId + "] (" + homeTeamName + ") " + homeFName + " " + homeLName + " [" + date + "]", homePoints);
+                    }
                 }
-            }
-
-            List<Map<String, Object>> oppTeamStats = (List<Map<String, Object>>) api.getPlayersStatistics(season, oppTeamId, gameId);
-            for (Map<String, Object> oppTeamData : oppTeamStats) {
-                Map<String, Object> oppTeamMap = (Map<String, Object>) oppTeamData.get("team");
-                double doubleOppPlayersTeamId = (Double) oppTeamMap.get("id");
-                int oppPlayersTeamId = (int) doubleOppPlayersTeamId;
-                Map<String, Object> oppTeamPlayerMap = (Map<String, Object>) oppTeamData.get("player");
-                String oppFName = (String) oppTeamPlayerMap.get("firstname");
-                String oppLName = (String) oppTeamPlayerMap.get("lastname");
-                double doublePlayersPoints = (Double) oppTeamData.get("points");
-                int playerPoints = (int) doublePlayersPoints;
-                if (oppPlayersTeamId == visitorId) {
-                    playerPointsList.put("Visiting [" + gameId + "] " + startDate + " " + oppFName + " " + oppLName + " " + opponentTeamName, playerPoints);
-                } else if (oppPlayersTeamId == homeId) {
-                    playerPointsList.put("Home [" + gameId + "] " + startDate + " " + oppFName + " " + oppLName + " " + opponentTeamName, playerPoints);
+            } else if (gamesMap.contains("Visitor")) {
+                String visitingId = String.valueOf(gamesList.get(gamesMap));
+                String[] parts = gamesMap.split(" ");
+                String visitingGameId = parts[0];
+                String date = parts[parts.length - 1];
+                HashMap<String, Object> teamStats = (HashMap<String, Object>) api.getPlayersStatistics(season, visitingId, visitingGameId);
+                for (String teamData : teamStats.keySet()) {
+                    if (teamData.contains(visitingGameId)) {
+                        int visitingPoints = (int) teamStats.get(teamData);
+                        String[] teamParts = teamData.split(" ");
+                        String visitingFName = teamParts[1];
+                        String visitingLName = teamParts[2];
+                        String visitingTeamName = teamParts[teamParts.length - 2] + " " + teamParts[teamParts.length - 1];
+                        playerPointsList.put("Visiting [" + visitingGameId + "] (" + visitingTeamName + ") " + visitingFName + " " + visitingLName + " [" + date + "]", visitingPoints);
+                    }
                 }
             }
         }
         return playerPointsList;
     }
-    // Need this
+
     public HashMap<String, Object> getSameGamePlayers(String playerName, int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
-        Games games = new Games();
-        HashMap<String, Object> playersMap = games.getPlayersPoints(season, teamName, opponentTeamName);
+        Players players = new Players();
+        HashMap<String, Object> playersMap = getPlayersPoints(season, teamName, opponentTeamName);
         PointPercentage percentage = new PointPercentage();
-        Map<String, Object> pointsBySeason = percentage.getPointPercentage(playerName, season, teamName, opponentTeamName);
+        HashMap<String, Object> pointsBySeason = players.getPointsBySeason(playerName, season, teamName, opponentTeamName);
         List<Integer> gameIds = new ArrayList<>();
         HashMap<String, Object> playersPoints = new HashMap<>();
         for (String key : pointsBySeason.keySet()) {
@@ -85,13 +73,24 @@ public class Games {
 
         for (int i = 0; i < gameIds.size(); i++) {
             int intGameId = gameIds.get(i);
-            String stringGameId = "[" + String.valueOf(intGameId) + "]";
-            for (String players : playersMap.keySet()) {
-                if (players.contains(stringGameId)) {
-                    playersPoints.put(players, playersMap.get(players));
+            String stringGameId = String.valueOf(intGameId);
+            for (String player : playersMap.keySet()) {
+                if (player.contains(stringGameId)) {
+                    playersPoints.put(player, playersMap.get(player));
                 }
             }
         }
         return playersPoints;
+    }
+
+    public HashMap<String, Object> getOpponentStats(String playerName, int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
+        HashMap<String, Object> opponents = new HashMap<>();
+        HashMap<String, Object> allPlayers = getSameGamePlayers(playerName, season, teamName, opponentTeamName);
+        for (String key : allPlayers.keySet()) {
+            if (key.contains(opponentTeamName)) {
+                opponents.put(key, allPlayers.get(key));
+            }
+        }
+        return opponents;
     }
 }

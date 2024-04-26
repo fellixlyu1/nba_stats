@@ -47,8 +47,9 @@ public class Api {
         return 0;
     }
 
-    public List<Map<String, Object>> getPlayersStatistics(int season, int teamId, int gameId) throws IOException, InterruptedException {
+    public HashMap<String, Object> getPlayersStatistics(int season, String teamId, String gameId) throws IOException, InterruptedException {
 
+        HashMap<String, Object> playerStats = new HashMap<>();
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
         String apiKey = properties.getProperty("x-rapidapi-key");
@@ -68,7 +69,20 @@ public class Api {
         Map<String, Object> playerInfo = gson.fromJson(responseBody, HashMap.class);
 
         List<Map<String, Object>> playersStatisticsList = (List<Map<String, Object>>) playerInfo.get("response");
-        return playersStatisticsList;
+
+        for (Map<String, Object> teamData : playersStatisticsList) {
+            Map<String, Object> teamMap = (Map<String, Object>) teamData.get("team");
+            double doublePlayersTeamId = (Double) teamMap.get("id");
+            int playersTeamId = (int) doublePlayersTeamId;
+            String teamName = (String) teamMap.get("name");
+            Map<String, Object> teamPlayerMap = (Map<String, Object>) teamData.get("player");
+            String fName = (String) teamPlayerMap.get("firstname");
+            String lName = (String) teamPlayerMap.get("lastname");
+            double doublePlayersPoints = (Double) teamData.get("points");
+            int playerPoints = (int) doublePlayersPoints;
+            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName, playerPoints);
+        }
+        return playerStats;
     }
 
     public List<Map<String, Object>> getTeamsEndpoint(String teamName) throws IOException, InterruptedException {
@@ -98,8 +112,8 @@ public class Api {
         return teamList;
     }
 
-    public List<Map<String, Object>>  getGamesList(int season, String h2h) throws IOException, InterruptedException {
-        List<Integer> gamesIdList = new ArrayList<>();
+    public HashMap<String, Object> getGamesList(int season, String h2h) throws IOException, InterruptedException {
+        HashMap<String, Object> gamesDataMap = new HashMap<>();
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
         String apiKey = properties.getProperty("x-rapidapi-key");
@@ -118,7 +132,23 @@ public class Api {
 
         Gson gson = new Gson();
         Map<String, Object> gameInfo = gson.fromJson(responseBody, HashMap.class);
-        List<Map<String, Object>> gamesList = (List<Map<String, Object>> ) gameInfo.get("response");
-        return gamesList;
+        List<Map<String, Object>> gamesList = (List<Map<String, Object>>) gameInfo.get("response");
+
+        for (Map<String, Object> gamesMap : gamesList) {
+            double doubleGameId = (Double) gamesMap.get("id");
+            int gameId = (int) doubleGameId;
+            Map<String, Object> teams = (Map<String, Object>) gamesMap.get("teams");
+            Map<String, Object> visitors = (Map<String, Object>) teams.get("visitors");
+            Map<String, Object> home = (Map<String, Object>) teams.get("home");
+            Map<String, Object> date = (Map<String, Object>) gamesMap.get("date");
+            double doubleVisitorId = (Double) visitors.get("id");
+            double doubleHomeId = (Double) home.get("id");
+            int visitorId = (int) doubleVisitorId;
+            int homeId = (int) doubleHomeId;
+            String startDate = (String) date.get("start");
+            gamesDataMap.put(gameId + " Home " + startDate, homeId);
+            gamesDataMap.put(gameId + " Visitor " + startDate, visitorId);
+        }
+        return gamesDataMap;
     }
 }
