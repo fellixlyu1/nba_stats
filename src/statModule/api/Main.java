@@ -93,7 +93,9 @@ public class Main {
                 int playerId = api.getPlayersIds(playerName, teamId, season);
                 HashMap<String, Object> teamStatistics = new HashMap<>();
                 for (String object : gamesList.keySet()) {
-                    int gameId = (int) gamesList.get(object);
+                    String[] gameData = object.split(" ");
+                    String intGameId = gameData[0];
+                    int gameId = Integer.valueOf(intGameId);
                     HashMap<String, Object> teamsStat = (HashMap<String, Object>) api.getPlayersStatistics(gameId, season, teamId);
                     String stringGameId = String.valueOf(gameId);
                     for (String teamKey : teamsStat.keySet()) {

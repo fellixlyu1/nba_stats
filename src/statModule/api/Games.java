@@ -16,11 +16,11 @@ public class Games {
         HashMap<String, Object> playerPointsList = new HashMap<>();
 
         for (String gamesMap : gamesList.keySet()) {
-            int intGameId = (int) gamesList.get(gamesMap);
-            String gameId = String.valueOf(intGameId);
             if (gamesMap.contains("Home")) {
+                int intHomeId = (int) gamesList.get(gamesMap);
+                String homeId = String.valueOf(intHomeId);
                 String[] teamParts = gamesMap.split(" ");
-                String homeId = teamParts[0];
+                String gameId = teamParts[0];
                 String date = teamParts[2];
                 for (String playerData : playerStatistics.keySet()) {
                     if (playerData.contains(gameId) && playerData.contains(homeId) && playerData.contains("Points")) {
@@ -32,8 +32,10 @@ public class Games {
                     }
                 }
             } else if (gamesMap.contains("Visitor")) {
+                int intVisitorId = (int) gamesList.get(gamesMap);
+                String visitorId = String.valueOf(intVisitorId);
                 String[] teamParts = gamesMap.split(" ");
-                String visitorId = teamParts[0];
+                String gameId = teamParts[0];
                 String date = teamParts[2];
                 for (String playerData : playerStatistics.keySet()) {
                     if (playerData.contains(gameId) && playerData.contains(visitorId) && playerData.contains("Points")) {

@@ -156,8 +156,8 @@ public class Api {
             int visitorId = (int) doubleVisitorId;
             int homeId = (int) doubleHomeId;
             String startDate = (String) date.get("start");
-            gamesDataMap.put(homeId + " Home " + startDate, gameId);
-            gamesDataMap.put(visitorId + " Visitor " + startDate, gameId);
+            gamesDataMap.put(gameId + " Home " + startDate, homeId);
+            gamesDataMap.put(gameId + " Visitor " + startDate, visitorId);
         }
         return gamesDataMap;
     }
