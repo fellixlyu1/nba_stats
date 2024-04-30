@@ -5,15 +5,14 @@ import java.sql.Array;
 import java.util.*;
 
 public class PointPercentage {
-    //Need this
-    public HashMap<String, Object> getPointPercentage(String playerName, int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
-        Players players = new Players();
-        HashMap<String, Object> percentageMap = players.getPointsBySeason(playerName, season, teamName, opponentTeamName);
+    //Need players.getPointsBySeason method
+    public HashMap<String, Object> getPointPercentage(HashMap<String, Object> percentageMap) throws IOException, InterruptedException {
         HashMap<String, Object> percentageFromSeason = new HashMap<>();
         HashMap<String, Object> homeSeasonPercentage = new HashMap<>();
         HashMap<String, Object> visitingSeasonPercentage = new HashMap<>();
         HashMap<String, Object> homePlayoffPercentage = new HashMap<>();
         HashMap<String, Object> visitingPlayoffPercentage = new HashMap<>();
+
         for (String allGames : percentageMap.keySet()) {
             if (allGames.contains("Seasonal Game: Home")) {
                 int homeSeasonPoints = (int) percentageMap.get(allGames);
@@ -33,13 +32,13 @@ public class PointPercentage {
         List<Integer> homeSeasonPerc = new ArrayList<>();
         List<Integer> visitingSeasonPerc = new ArrayList<>();
 
-        for (String homeSeasonPoints : homeSeasonPercentage.keySet()) {
-            int avg = (int) homeSeasonPercentage.get(homeSeasonPoints);
+        for (Object homeSeasonPoints : homeSeasonPercentage.values()) {
+            int avg = (int) homeSeasonPoints;
             homeSeasonPerc.add(avg);
         }
 
-        for (String visitingSeasonPoints : visitingSeasonPercentage.keySet()) {
-            int avg = (int) visitingSeasonPercentage.get(visitingSeasonPoints);
+        for (Object visitingSeasonPoints : visitingSeasonPercentage.values()) {
+            int avg = (int) visitingSeasonPoints;
             visitingSeasonPerc.add(avg);
         }
 
@@ -53,23 +52,28 @@ public class PointPercentage {
                 .mapToDouble(a -> a)
                 .average();
 
-        for (String homePlayoffKey : homePlayoffPercentage.keySet()) {
-            if (homePlayoffKey.contains("Playoff Game: Home")) {
-                String homeData = (String) homePlayoffKey;
-                int homeElement = (int) homePlayoffPercentage.get(homePlayoffKey);
-                double homePercentage = (homeSeasonalAvg.getAsDouble() / 100) * (homeElement - homeSeasonalAvg.getAsDouble());
-                percentageFromSeason.put(homeData, homePercentage);
+        double homePercentage = 0.0;
+        if (homeSeasonalAvg.isPresent()) {
+            for (String homePlayoffKey : homePlayoffPercentage.keySet()) {
+                if (homePlayoffKey.contains("Playoff Game: Home")) {
+                    int homeElement = (int) homePlayoffPercentage.get(homePlayoffKey);
+                    homePercentage = (homeSeasonalAvg.getAsDouble() / 100) * (homeElement - homeSeasonalAvg.getAsDouble());
+                    percentageFromSeason.put(homePlayoffKey, homePercentage);
+                }
             }
         }
 
-        for (String visitingPlayoffKey : visitingPlayoffPercentage.keySet()) {
-            if (visitingPlayoffKey.contains("Playoff Game: Visiting")) {
-                String visitingData = (String) visitingPlayoffKey;
-                int visitingElement = (int) visitingPlayoffPercentage.get(visitingPlayoffKey);
-                double visitingPercentage = (visitingSeasonalAvg.getAsDouble() / 100) * (visitingElement - visitingSeasonalAvg.getAsDouble());
-                percentageFromSeason.put(visitingData, visitingPercentage);
+        double visitingPercentage = 0.0;
+        if (visitingSeasonalAvg.isPresent()) {
+            for (String visitingPlayoffKey : visitingPlayoffPercentage.keySet()) {
+                if (visitingPlayoffKey.contains("Playoff Game: Visiting")) {
+                    int visitingElement = (int) visitingPlayoffPercentage.get(visitingPlayoffKey);
+                    visitingPercentage = (visitingSeasonalAvg.getAsDouble() / 100) * (visitingElement - visitingSeasonalAvg.getAsDouble());
+                    percentageFromSeason.put(visitingPlayoffKey, visitingPercentage);
+                }
             }
         }
+
         return percentageFromSeason;
     }
 }

@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class Players {
-    Games games = new Games();
-    public HashMap<String, Object> getPointsByName(String playerName, int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
-        HashMap<String, Object> playersPoints = (HashMap<String, Object>) games.getPlayersPoints(season, teamName, opponentTeamName);
+    //this method is used by games.getPlayersPoints
+    public HashMap<String, Object> getPointsByName(HashMap<String, Object> playersPoints, String playerName) throws IOException, InterruptedException {
         HashMap<String, Object> pointsByName = new HashMap<>();
         for (String player : playersPoints.keySet()) {
             if (player.contains(playerName)) {
@@ -18,10 +17,8 @@ public class Players {
         return pointsByName;
     }
     //Need this
-    public HashMap<String, Object> getPointsBySeason(String playerName, int season, String teamName, String opponentTeamName) throws IOException, InterruptedException {
+    public HashMap<String, Object> getPointsBySeason(HashMap<String, Object> pointsByName, int season) throws IOException, InterruptedException {
 
-        Players players = new Players();
-        HashMap<String, Object> pointsByName = (HashMap<String, Object>) players.getPointsByName(playerName, season, teamName, opponentTeamName);
         int playoffs = season + 1;
 
         HashMap<String, Object> allGames = new HashMap<>();

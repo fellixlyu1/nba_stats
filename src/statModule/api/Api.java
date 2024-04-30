@@ -3,9 +3,7 @@ package statModule.api;
 import com.google.gson.Gson;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -16,7 +14,10 @@ import java.util.*;
 
 public class Api {
 
-    public int getPlayersIds(String name, int teamId, int season) throws IOException, InterruptedException {
+    public int getPlayersIds(String name, String teamId, int season) throws IOException, InterruptedException {
+
+        String[] parts = name.split(" ");
+        String lastName = parts[parts.length - 1];
 
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
@@ -26,7 +27,7 @@ public class Api {
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest requestForId = HttpRequest.newBuilder()
-                .uri(URI.create("https://v2.nba.api-sports.io/players?name=" + name + "&season=" + season + "&team=" + teamId))
+                .uri(URI.create("https://v2.nba.api-sports.io/players?name=" + lastName + "&season=" + season + "&team=" + teamId))
                 .header("x-rapidapi-key", apiKey)
                 .header("x-rapidapi-host", apiHost)
                 .build();
@@ -47,7 +48,7 @@ public class Api {
         return 0;
     }
 
-    public HashMap<String, Object> getPlayersStatistics(int season, String teamId, String gameId) throws IOException, InterruptedException {
+    public HashMap<String, Object> getPlayersStatistics(int gameId, int season, String stringTeamId) throws IOException, InterruptedException {
 
         HashMap<String, Object> playerStats = new HashMap<>();
         Properties properties = new Properties();
@@ -57,7 +58,7 @@ public class Api {
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://v2.nba.api-sports.io/players/statistics?" + "season=" + season + "&team=" + teamId + "&game=" + gameId))
+                .uri(URI.create("https://v2.nba.api-sports.io/players/statistics?game=" + gameId + "&season=" + season + "&team=" + stringTeamId))
                 .header("x-rapidapi-key", apiKey)
                 .header("x-rapidapi-host", apiHost)
                 .build();
@@ -70,8 +71,11 @@ public class Api {
 
         List<Map<String, Object>> playersStatisticsList = (List<Map<String, Object>>) playerInfo.get("response");
 
+        int teamId = Integer.valueOf(stringTeamId);
+
         for (Map<String, Object> teamData : playersStatisticsList) {
             Map<String, Object> teamMap = (Map<String, Object>) teamData.get("team");
+            Map<String, Object> gameIdMap = (Map<String, Object>) teamData.get("game");
             double doublePlayersTeamId = (Double) teamMap.get("id");
             int playersTeamId = (int) doublePlayersTeamId;
             String teamName = (String) teamMap.get("name");
@@ -80,7 +84,13 @@ public class Api {
             String lName = (String) teamPlayerMap.get("lastname");
             double doublePlayersPoints = (Double) teamData.get("points");
             int playerPoints = (int) doublePlayersPoints;
-            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName, playerPoints);
+            double doublePlayersThreePointFieldGoals = (Double) teamData.get("tpm");
+            int playersThreePointFieldGoals = (int) doublePlayersThreePointFieldGoals;
+            double doublePlayersThreePointAttempted = (Double) teamData.get("tpa");
+            int playersThreeAttempts = (int) doublePlayersThreePointAttempted;
+            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Points]", playerPoints);
+            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Three Pointers]", playersThreePointFieldGoals);
+            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Threes Attempted]", playersThreeAttempts);
         }
         return playerStats;
     }
@@ -146,8 +156,8 @@ public class Api {
             int visitorId = (int) doubleVisitorId;
             int homeId = (int) doubleHomeId;
             String startDate = (String) date.get("start");
-            gamesDataMap.put(gameId + " Home " + startDate, homeId);
-            gamesDataMap.put(gameId + " Visitor " + startDate, visitorId);
+            gamesDataMap.put(homeId + " Home " + startDate, gameId);
+            gamesDataMap.put(visitorId + " Visitor " + startDate, gameId);
         }
         return gamesDataMap;
     }
