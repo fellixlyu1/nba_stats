@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
@@ -31,6 +32,7 @@ public class Main {
     public Main() {
         Teams teams = new Teams();
         ThreePointers threePointers = new ThreePointers();
+        TravelPercentage travelPercentage = new TravelPercentage();
         JFrame frame = new JFrame("NBA STATS");
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -79,6 +81,19 @@ public class Main {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(button);
 
+        JButton switchButton = new JButton("Switch Teams");
+        switchButton.setPreferredSize(new Dimension(150, 50));
+
+        switchButton.addActionListener(e -> {
+            String selectedTeam = (String) teamComboBox.getSelectedItem();
+            String selectedOpponentTeam = (String) opponentTeamComboBox.getSelectedItem();
+
+            teamComboBox.setSelectedItem(selectedOpponentTeam);
+            opponentTeamComboBox.setSelectedItem(selectedTeam);
+        });
+
+        buttonPanel.add(switchButton);
+
         button.addActionListener(e -> {
             String playerName = ((JTextField) rowPanels[0].getComponent(1)).getText();
             int season = Integer.parseInt(((JTextField) rowPanels[1].getComponent(1)).getText());
@@ -107,32 +122,43 @@ public class Main {
                 }
 
                 HashMap<String, Object> playerThreesBySeason = new HashMap<>();
-                HashMap<String, Object> playersPoints = games.getPlayersPoints(teamStatistics, gamesList);
+                HashMap<String, Object> playersPoints = games.getPlayersPoints(teamStatistics, gamesList, playerName);
 
-
-                HashMap<String, Object> pointsByName = players.getPointsByName(playersPoints, playerName);
-                HashMap<String, Object> playerPointsBySeason = players.getPointsBySeason(pointsByName, season);
+                HashMap<String, Object> playerPointsBySeason = players.getPointsBySeason(playersPoints, season);
 
                 HashMap<String, Object> playersThreeAttempts = threePointers.getThreePointAttempts(teamStatistics, gamesList, playerName);
                 HashMap<String, Object> playersThrees = threePointers.getThreePointers(teamStatistics, gamesList, playerName);
                 HashMap<String, Object> threesStats = threePointers.threePointsStats(playersThreeAttempts, playersThrees);
                 HashMap<String, Object> threesBySeason = players.getPointsBySeason(threesStats, season);
 
-                HashMap<String, Object> homeSeason = new HashMap<>();
-                HashMap<String, Object> visitingSeason = new HashMap<>();
-                HashMap<String, Object> homePlayoff = new HashMap<>();
-                HashMap<String, Object> visitingPlayoff = new HashMap<>();
-                HashMap<String, Object> pointPercentage = new HashMap<>();
+                TreeMap<String, Integer> percentageTravel = new TreeMap<>();
 
                 for (String key : playerPointsBySeason.keySet()) {
-                    if (key.contains("Seasonal Game: Home")) {
-                        homeSeason.put(key, playerPointsBySeason.get(key));
-                    } else if (key.contains("Seasonal Game: Visiting")) {
-                        visitingSeason.put(key, playerPointsBySeason.get(key));
-                    } else if (key.contains("Playoff Game: Home")) {
-                        homePlayoff.put(key, playerPointsBySeason.get(key));
-                    } else if (key.contains("Playoff Game: Visiting")) {
-                        visitingPlayoff.put(key, playerPointsBySeason.get(key));
+                    int playerPoints = (int) playerPointsBySeason.get(key);
+                    percentageTravel.put(key, playerPoints);
+                }
+
+                TreeMap<String, Double> percentFromTravel = travelPercentage.getTravelPercentage(percentageTravel);
+
+                TreeMap<String, Object> homeSeason = new TreeMap<>();
+                TreeMap<String, Object> visitingSeason = new TreeMap<>();
+                TreeMap<String, Object> homePlayoff = new TreeMap<>();
+                TreeMap<String, Object> visitingPlayoff = new TreeMap<>();
+                TreeMap<String, Object> pointPercentage = new TreeMap<>();
+
+                for (String entry : percentFromTravel.keySet()) {
+                    double doublePercent = percentFromTravel.get(entry);
+                    String percent = String.valueOf(doublePercent);
+                    String[] data = entry.split(" ");
+                    String gameId = data[3].substring(1, data[3].length() - 1);
+                    if (entry.contains("Seasonal Game: Home") && entry.contains(gameId)) {
+                        homeSeason.put(entry + " = " + playerPointsBySeason.get(entry), percent + "%");
+                    } else if (entry.contains("Seasonal Game: Visiting") && entry.contains(gameId)) {
+                        visitingSeason.put(entry + " = " + playerPointsBySeason.get(entry), percent + "%");
+                    } else if (entry.contains("Playoff Game: Home") && entry.contains(gameId)) {
+                        homePlayoff.put(entry + " = " + playerPointsBySeason.get(entry), percent + "%");
+                    } else if (entry.contains("Playoff Game: Visiting") && entry.contains(gameId)) {
+                        visitingPlayoff.put(entry + " = " + playerPointsBySeason.get(entry), percent + "%");
                     }
                 }
 
@@ -143,11 +169,11 @@ public class Main {
                     }
                 }
 
-                HashMap<String, Object> homeSeasonThrees = new HashMap<>();
-                HashMap<String, Object> visitingSeasonThrees = new HashMap<>();
-                HashMap<String, Object> homePlayoffThrees = new HashMap<>();
-                HashMap<String, Object> visitingPlayoffThrees = new HashMap<>();
-                HashMap<String, Object> threePointPercentage = new HashMap<>();
+                TreeMap<String, Object> homeSeasonThrees = new TreeMap<>();
+                TreeMap<String, Object> visitingSeasonThrees = new TreeMap<>();
+                TreeMap<String, Object> homePlayoffThrees = new TreeMap<>();
+                TreeMap<String, Object> visitingPlayoffThrees = new TreeMap<>();
+
 
                 for (String key : threesBySeason.keySet()) {
                     if (key.contains("Seasonal Game: Home")) {
