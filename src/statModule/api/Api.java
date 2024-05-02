@@ -3,12 +3,14 @@ package statModule.api;
 import com.google.gson.Gson;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
@@ -24,10 +26,12 @@ public class Api {
         String apiKey = properties.getProperty("x-rapidapi-key");
         String apiHost = properties.getProperty("x-rapidapi-host");
 
+        String encodedLastName = URLEncoder.encode(lastName, StandardCharsets.UTF_8);
+
         HttpClient client = HttpClient.newHttpClient();
 
         HttpRequest requestForId = HttpRequest.newBuilder()
-                .uri(URI.create("https://v2.nba.api-sports.io/players?name=" + lastName + "&season=" + season + "&team=" + teamId))
+                .uri(URI.create("https://v2.nba.api-sports.io/players?name=" + encodedLastName + "&season=" + season + "&team=" + teamId))
                 .header("x-rapidapi-key", apiKey)
                 .header("x-rapidapi-host", apiHost)
                 .build();
@@ -48,9 +52,9 @@ public class Api {
         return 0;
     }
 
-    public HashMap<String, Object> getPlayersStatistics(int gameId, int season, String stringTeamId) throws IOException, InterruptedException {
+    public TreeMap<String, Object> getTeamLineup(String gameId, int season, String teamId) throws IOException, InterruptedException {
 
-        HashMap<String, Object> playerStats = new HashMap<>();
+        TreeMap<String, Object> teamLineup = new TreeMap<String, Object>();
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
         String apiKey = properties.getProperty("x-rapidapi-key");
@@ -58,7 +62,39 @@ public class Api {
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://v2.nba.api-sports.io/players/statistics?game=" + gameId + "&season=" + season + "&team=" + stringTeamId))
+                .uri(URI.create("https://v2.nba.api-sports.io/players/statistics?game=" + gameId + "&season=" + season + "&team=" + teamId))
+                .header("x-rapidapi-key", apiKey)
+                .header("x-rapidapi-host", apiHost)
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        String responseBody = response.body();
+
+        Gson gson = new Gson();
+        Map<String, Object> teamInfo = gson.fromJson(responseBody, HashMap.class);
+
+        List<Map<String, Object>> teamLineupList = (List<Map<String, Object>>) teamInfo.get("response");
+
+        for (Map<String, Object> teamLineupData : teamLineupList) {
+            Map<String, Object> players = (Map<String, Object>) teamLineupData.get("players");
+            String fName = (String) players.get("firstname");
+            String lName = (String) players.get("lastname");
+            teamLineup.put("[" + gameId + "]", fName + " " + lName);
+        }
+        return teamLineup;
+    }
+
+    public TreeMap<String, Object> getPlayersStatistics(String gameId, int season, int playerId) throws IOException, InterruptedException {
+
+        TreeMap<String, Object> playerStats = new TreeMap<String, Object>();
+        Properties properties = new Properties();
+        properties.load(new FileInputStream("api_keys.properties"));
+        String apiKey = properties.getProperty("x-rapidapi-key");
+        String apiHost = properties.getProperty("x-rapidapi-host");
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://v2.nba.api-sports.io/players/statistics?game=" + gameId + "&season=" + season + "&id=" + playerId))
                 .header("x-rapidapi-key", apiKey)
                 .header("x-rapidapi-host", apiHost)
                 .build();
@@ -71,59 +107,32 @@ public class Api {
 
         List<Map<String, Object>> playersStatisticsList = (List<Map<String, Object>>) playerInfo.get("response");
 
-        int teamId = Integer.valueOf(stringTeamId);
-
         for (Map<String, Object> teamData : playersStatisticsList) {
             Map<String, Object> teamMap = (Map<String, Object>) teamData.get("team");
             Map<String, Object> gameIdMap = (Map<String, Object>) teamData.get("game");
             double doublePlayersTeamId = (Double) teamMap.get("id");
             int playersTeamId = (int) doublePlayersTeamId;
-            String teamName = (String) teamMap.get("name");
-            Map<String, Object> teamPlayerMap = (Map<String, Object>) teamData.get("player");
-            String fName = (String) teamPlayerMap.get("firstname");
-            String lName = (String) teamPlayerMap.get("lastname");
             double doublePlayersPoints = (Double) teamData.get("points");
             int playerPoints = (int) doublePlayersPoints;
             double doublePlayersThreePointFieldGoals = (Double) teamData.get("tpm");
             int playersThreePointFieldGoals = (int) doublePlayersThreePointFieldGoals;
-            double doublePlayersThreePointAttempted = (Double) teamData.get("tpa");
-            int playersThreeAttempts = (int) doublePlayersThreePointAttempted;
-            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Points]", playerPoints);
-            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Three Pointers]", playersThreePointFieldGoals);
-            playerStats.put(gameId + " " + fName + " " + lName + " " + teamName + " " + playersTeamId + " [Threes Attempted]", playersThreeAttempts);
+            double doubleAssists = (Double) teamData.get("assists");
+            int assists = (int) doubleAssists;
+            double doubleTotalReb = (Double) teamData.get("totReb");
+            int rebounds = (int) doubleTotalReb;
+            playerStats.put(gameId + " " + playersTeamId + " [Points]", playerPoints);
+            playerStats.put(gameId + " " + playersTeamId + " [Three Pointers]", playersThreePointFieldGoals);
+            playerStats.put(gameId + " " + playersTeamId + " [Assists]", assists);
+            playerStats.put(gameId + " " + playersTeamId + " [Rebounds]", rebounds);
         }
         return playerStats;
     }
 
-    public List<Map<String, Object>> getTeamsEndpoint(String teamName) throws IOException, InterruptedException {
+    public TreeMap<String, Object> getGamesList(int season, String h2h, String stringTeamId) throws IOException, InterruptedException {
+        TreeMap<String, Object> gamesDataMap = new TreeMap<>();
 
-        Properties properties = new Properties();
-        properties.load(new FileInputStream("api_keys.properties"));
-        String apiKey = properties.getProperty("x-rapidapi-key");
-        String apiHost = properties.getProperty("x-rapidapi-host");
+        int teamId = Integer.valueOf(stringTeamId);
 
-
-        String encodedPlayer = URLEncoder.encode(teamName, "UTF-8");
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://v2.nba.api-sports.io/teams?name=" + encodedPlayer))
-                .header("x-rapidapi-key", apiKey)
-                .header("x-rapidapi-host", apiHost)
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        String responseBody = response.body();
-
-        Gson gson = new Gson();
-        Map<String, Object> teamInfo = gson.fromJson(responseBody, HashMap.class);
-        List<Map<String, Object>> teamList = (List<Map<String, Object>>) teamInfo.get("response");
-        return teamList;
-    }
-
-    public HashMap<String, Object> getGamesList(int season, String h2h) throws IOException, InterruptedException {
-        HashMap<String, Object> gamesDataMap = new HashMap<>();
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
         String apiKey = properties.getProperty("x-rapidapi-key");
@@ -156,9 +165,44 @@ public class Api {
             int visitorId = (int) doubleVisitorId;
             int homeId = (int) doubleHomeId;
             String startDate = (String) date.get("start");
-            gamesDataMap.put(gameId + " Home " + startDate, homeId);
-            gamesDataMap.put(gameId + " Visitor " + startDate, visitorId);
+            String homeName = (String) home.get("name");
+            String visitorName = (String) visitors.get("name");
+            if (homeId == teamId) {
+                gamesDataMap.put(gameId + " Home " + startDate, homeId);
+            } else if (visitorId == teamId) {
+                gamesDataMap.put(gameId + " Visitor " + startDate, visitorId);
+            }
         }
         return gamesDataMap;
     }
+
+    /*public int getTeamId(String teamName) throws IOException, InterruptedException {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream("api_keys.properties"));
+        String apiKey = properties.getProperty("x-rapidapi-key");
+        String apiHost = properties.getProperty("x-rapidapi-host");
+
+        String encodedTeamName = URLEncoder.encode(teamName, StandardCharsets.UTF_8);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://v2.nba.api-sports.io/teams?name=" + encodedTeamName))
+                .header("x-rapidapi-key", apiKey)
+                .header("x-rapidapi-host", apiHost)
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        String responseBody = response.body();
+
+        Gson gson = new Gson();
+        Map<String, Object> gameInfo = gson.fromJson(responseBody, HashMap.class);
+        List<Map<String, Object>> teamsList = (List<Map<String, Object>>) gameInfo.get("response");
+        for (Map<String, Object> teamsData : teamsList) {
+            double doubleTeamId = (Double) teamsData.get("id");
+            int teamId = (int) doubleTeamId;
+            return teamId;
+        }
+        return 0;
+    }*/
 }
