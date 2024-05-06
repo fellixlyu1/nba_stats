@@ -76,10 +76,11 @@ public class Api {
         List<Map<String, Object>> teamLineupList = (List<Map<String, Object>>) teamInfo.get("response");
 
         for (Map<String, Object> teamLineupData : teamLineupList) {
-            Map<String, Object> players = (Map<String, Object>) teamLineupData.get("players");
+            Map<String, Object> players = (Map<String, Object>) teamLineupData.get("player");
             String fName = (String) players.get("firstname");
             String lName = (String) players.get("lastname");
-            teamLineup.put("[" + gameId + "]", fName + " " + lName);
+            String pos = (String) teamLineupData.get("pos");
+            teamLineup.put("[" + gameId + "]" + fName + " " + lName, pos);
         }
         return teamLineup;
     }

@@ -1,6 +1,9 @@
 package statModule.api;
 
+import com.opencsv.CSVWriter;
+
 import java.awt.*;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,6 +21,7 @@ public class Main {
     private final Assists assists = new Assists();
     private final Rebounds rebounds = new Rebounds();
     private final Threes threes = new Threes();
+    //private static final WriteToCsv csv = new WriteToCsv();
     private final JComboBox<String> teamComboBox = new JComboBox<>();
     private final JComboBox<String> opponentTeamComboBox = new JComboBox<>();
 
@@ -91,6 +95,11 @@ public class Main {
             String opponentTeamName = (String) opponentTeamComboBox.getSelectedItem();
 
             try {
+                String[] fullName = playerName.split(" ");
+                String lName = fullName[1];
+                String[] teamFullName = teamName.split(" ");
+                String team = teamFullName[teamFullName.length - 1];
+                String csvFileName = lName + "_" + team + ".csv";
                 String[] teamsList = teams.getTeams();
                 String teamId = teams.getTeamId(teamName);
                 String oppTeamId = teams.getTeamId(opponentTeamName);
@@ -103,12 +112,14 @@ public class Main {
                 TreeMap<String, Object> seasonalOrPlayoffList = new TreeMap<>();
 
                 TreeMap<String, Object> all = new TreeMap<>();
+                //TreeMap<String, Object> teamLineup = new TreeMap();
 
                 for (String key : gamesList.keySet()) {
                     String[] gameData = key.split(" ");
                     String gameId = gameData[0];
                     String date = gameData[2].substring(0, 10);
                     TreeMap<String, Object> statistics = (TreeMap<String, Object>) api.getPlayersStatistics(gameId, season, playerId);
+                    //teamLineup.putAll(api.getTeamLineup(gameId, season, oppTeamId));
                     if (key.contains("Home")) {
                         TreeMap<String, Object> pointsList = (TreeMap<String, Object>) statistic.getHomePoints(statistics, gameId, date);
                         TreeMap<String, Object> eachSeasonOrPlayoff = (TreeMap<String, Object>) playoff.getSeasonOrPlayoff(pointsList, season);
@@ -120,14 +131,10 @@ public class Main {
                     }
                 }
 
-                TreeMap<String, Object> pointsPercentage = (TreeMap<String, Object>) points.getPointPercentages(seasonalOrPlayoffList);
-                all.putAll(pointsPercentage);
-                TreeMap<String, Object> assistsPercentage = (TreeMap<String, Object>) assists.getAssistsPercentages(seasonalOrPlayoffList);
-                all.putAll(assistsPercentage);
-                TreeMap<String, Object> reboundsPercentage = (TreeMap<String, Object>) rebounds.getReboundsPercentages(seasonalOrPlayoffList);
-                all.putAll(reboundsPercentage);
-                TreeMap<String, Object> threesPercentage = (TreeMap<String, Object>) threes.getThreesPercentages(seasonalOrPlayoffList);
-                all.putAll(threesPercentage);
+                all.putAll(points.getPointPercentages(seasonalOrPlayoffList));
+                all.putAll(assists.getAssistsPercentages(seasonalOrPlayoffList));
+                all.putAll(rebounds.getReboundsPercentages(seasonalOrPlayoffList));
+                all.putAll(threes.getThreesPercentages(seasonalOrPlayoffList));
 
                 StringBuilder response = new StringBuilder();
                 response.append("\n" + season + "-" + (season + 1) + " Points Percentage: \n");
@@ -154,6 +161,11 @@ public class Main {
                         response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
                     }
                 }
+                /*response.append("\n" + season + "-" + (season + 1) + " Opponent Team Lineup: \n");
+                for (Map.Entry<String, Object> entry : teamLineup.entrySet()) {
+                    response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
+                }*/
+                //csv.writeToCSV(all, csvFileName);
                 responseTextArea.setText(response.toString());
 
             } catch (IOException | InterruptedException ex) {
