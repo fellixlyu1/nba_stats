@@ -19,7 +19,12 @@ public class Api {
     public int getPlayersIds(String name, String teamId, int season) throws IOException, InterruptedException {
 
         String[] parts = name.split(" ");
-        String lastName = parts[parts.length - 1];
+        String lastName;
+        if (parts[parts.length - 1].contains("-")) {
+            lastName = parts[0];
+        } else {
+            lastName = parts[parts.length - 1];
+        }
 
         Properties properties = new Properties();
         properties.load(new FileInputStream("api_keys.properties"));
