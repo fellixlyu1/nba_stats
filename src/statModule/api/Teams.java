@@ -1,105 +1,98 @@
 package statModule.api;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class Teams {
-    public String getTeamId(String teamName) throws IOException, InterruptedException {
-        // Might need to change these according to api updates, use the commented out method "getTeamId" in Api class
+    public String getTeamId(String teamName) {
         if (teamName == "Atlanta Hawks") {
-            return "1";
+            return "ATL";
         }
         else if (teamName == "Boston Celtics") {
-            return "2";
+            return "BOS";
         }
         else if (teamName == "Brooklyn Nets") {
-            return "4";
+            return "BKN";
         }
         else if (teamName == "Charlotte Hornets") {
-            return "5";
+            return "CHO";
         }
         else if (teamName == "Chicago Bulls") {
-            return "6";
+            return "CHI";
         }
         else if (teamName == "Cleveland Cavaliers") {
-            return "7";
+            return "CLE";
         }
         else if (teamName == "Dallas Mavericks") {
-            return "8";
+            return "DAL";
         }
         else if (teamName == "Denver Nuggets") {
-            return "9";
+            return "DEN";
         }
         else if (teamName == "Detroit Pistons") {
-            return "10";
+            return "DET";
         }
         else if (teamName == "Golden State Warriors") {
-            return "11";
+            return "GSW";
         }
         else if (teamName == "Houston Rockets") {
-            return "14";
+            return "HOU";
         }
         else if (teamName == "Indiana Pacers") {
-            return "15";
+            return "IND";
         }
         else if (teamName == "Los Angeles Clippers") {
-            return "16";
+            return "LAC";
         }
         else if (teamName == "Los Angeles Lakers") {
-            return "17";
+            return "LAL";
         }
         else if (teamName == "Memphis Grizzlies") {
-            return "19";
+            return "MEM";
         }
         else if (teamName == "Miami Heat") {
-            return "20";
+            return "MIA";
         }
         else if (teamName == "Milwaukee Bucks") {
-            return "21";
+            return "MIL";
         }
         else if (teamName == "Minnesota Timberwolves") {
-            return "22";
+            return "MIN";
         }
         else if (teamName == "New Orleans Pelicans") {
-            return "23";
+            return "NOP";
         }
         else if (teamName == "New York Knicks") {
-            return "24";
+            return "NYK";
         }
         else if (teamName == "Oklahoma City Thunder") {
-            return "25";
+            return "OKC";
         }
         else if (teamName == "Orlando Magic") {
-            return "26";
+            return "ORL";
         }
         else if (teamName == "Philadelphia 76ers") {
-            return "27";
+            return "PHI";
         }
         else if (teamName == "Phoenix Suns") {
-            return "28";
+            return "PHX";
         }
         else if (teamName == "Portland Trail Blazers") {
-            return "29";
+            return "POR";
         }
         else if (teamName == "Sacramento Kings") {
-            return "30";
+            return "SAC";
         }
         else if (teamName == "San Antonio Spurs") {
-            return "31";
+            return "SAS";
         }
         else if (teamName == "Toronto Raptors") {
-            return "38";
+            return "TOR";
         }
         else if (teamName == "Utah Jazz") {
-            return "40";
+            return "UTA";
         }
         else if (teamName == "Washington Wizards") {
-            return "41";
+            return "WAS";
         }
-        return "00";
+        return "No team with that name";
     }
 
     public String[] getTeams() {

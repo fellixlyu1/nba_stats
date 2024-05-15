@@ -5,6 +5,7 @@ import com.opencsv.CSVWriter;
 import java.awt.*;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -14,10 +15,9 @@ import static javafx.application.Application.launch;
 
 public class Main {
     private final Api api = new Api();
-    private final Teams teams = new Teams();
-    private final Statistics statistic = new Statistics();
-    private final Playoff playoff = new Playoff();
+    private final Percentages percentages = new Percentages();
     private static final WriteToCsv csv = new WriteToCsv();
+    private final Teams teams = new Teams();
     private final JComboBox<String> teamComboBox = new JComboBox<>();
     private final JComboBox<String> opponentTeamComboBox = new JComboBox<>();
 
@@ -86,83 +86,70 @@ public class Main {
 
         button.addActionListener(e -> {
             String playerName = ((JTextField) rowPanels[0].getComponent(1)).getText();
-            int season = Integer.parseInt(((JTextField) rowPanels[1].getComponent(1)).getText());
+            int intSeason = Integer.parseInt(((JTextField) rowPanels[1].getComponent(1)).getText());
             String teamName = (String) teamComboBox.getSelectedItem();
             String opponentTeamName = (String) opponentTeamComboBox.getSelectedItem();
 
             try {
                 String[] fullName = playerName.split(" ");
-                String lName = fullName[1];
-                String[] teamFullName = teamName.split(" ");
-                String team = teamFullName[teamFullName.length - 1];
-                String[] oppTeamLast = opponentTeamName.split(" ");
-                String oppTeamLastName = oppTeamLast[oppTeamLast.length - 1];
-                String csvFileName = lName + "_" + team + "_" + season + "_" + oppTeamLastName + ".csv";
-                String[] teamsList = teams.getTeams();
-                String teamId = teams.getTeamId(teamName);
-                String oppTeamId = teams.getTeamId(opponentTeamName);
-                int playerId = api.getPlayersIds(playerName, teamId, season);
-
-                String h2h = teamId + "-" + oppTeamId;
-
-                TreeMap<String, Object> gamesList = (TreeMap<String, Object>) api.getGamesList(season, h2h, teamId);
-
-                TreeMap<String, Object> seasonalOrPlayoffList = new TreeMap<>();
+                String firstname = fullName[0];
+                String lastname = fullName[fullName.length - 1];
+                String playerId = api.getPlayersIds(firstname, lastname);
+                String team = teams.getTeamId(teamName);
+                String opponent = teams.getTeamId(opponentTeamName);
+                String season = String.valueOf(intSeason);
+                int intPrev = intSeason - 1;
+                String previousYear = String.valueOf(intPrev);
+                TreeMap<String, Object> game = api.getGames(playerId, season);
+                TreeMap<String, Object> points = new TreeMap<>();
+                TreeMap<String, Object> assists = new TreeMap<>();
+                TreeMap<String, Object> rebounds = new TreeMap<>();
+                TreeMap<String, Object> threes = new TreeMap<>();
 
                 TreeMap<String, Object> all = new TreeMap<>();
-                //TreeMap<String, Object> teamLineup = new TreeMap();
 
-                for (String key : gamesList.keySet()) {
-                    String[] gameData = key.split(" ");
-                    String gameId = gameData[0];
-                    String date = gameData[2].substring(0, 10);
-                    TreeMap<String, Object> statistics = (TreeMap<String, Object>) api.getPlayersStatistics(gameId, season, playerId);
-                    //teamLineup.putAll(api.getTeamLineup(gameId, season, oppTeamId));
-                    if (key.contains("Home")) {
-                        TreeMap<String, Object> pointsList = (TreeMap<String, Object>) statistic.getHomePoints(statistics, gameId, date);
-                        TreeMap<String, Object> eachSeasonOrPlayoff = (TreeMap<String, Object>) playoff.getSeasonOrPlayoff(pointsList, season);
-                        seasonalOrPlayoffList.putAll(eachSeasonOrPlayoff);
-                    } else if (key.contains("Visitor")) {
-                        TreeMap<String, Object> pointsList = (TreeMap<String, Object>) statistic.getVisitorPoints(statistics, gameId, date);
-                        TreeMap<String, Object> eachSeasonOrPlayoff = (TreeMap<String, Object>) playoff.getSeasonOrPlayoff(pointsList, season);
-                        seasonalOrPlayoffList.putAll(eachSeasonOrPlayoff);
+                for (Map.Entry<String, Object> objects : game.entrySet()) {
+                    if (((String) objects.getKey()).contains(opponent) && ((String) objects.getKey()).contains(team) && ((String) objects.getKey()).contains("Points")) {
+                        points.put((String) objects.getKey(), objects.getValue());
+                    } else if (((String) objects.getKey()).contains(opponent) && ((String) objects.getKey()).contains(team) && ((String) objects.getKey()).contains("Assists")) {
+                        assists.put((String) objects.getKey(), objects.getValue());
+                    } else if (((String) objects.getKey()).contains(opponent) && ((String) objects.getKey()).contains(team) && ((String) objects.getKey()).contains("Rebounds")) {
+                        rebounds.put((String) objects.getKey(), objects.getValue());
+                    } else if (((String) objects.getKey()).contains(opponent) && ((String) objects.getKey()).contains(team) && ((String) objects.getKey()).contains("Three Pointers")) {
+                        threes.put((String) objects.getKey(), objects.getValue());
                     }
                 }
+
+                TreeMap<String, Object> pointPercentage = percentages.getPercentages(points);
+                TreeMap<String, Object> assistPercentage = percentages.getPercentages(assists);
+                TreeMap<String, Object> reboundPercentage = percentages.getPercentages(rebounds);
+                TreeMap<String, Object> threePercentage = percentages.getPercentages(threes);
 
                 StringBuilder response = new StringBuilder();
-                response.append("\n" + season + "-" + (season + 1) + " Points Percentage: \n");
-                for (Map.Entry<String, Object> entry : seasonalOrPlayoffList.entrySet()) {
-                    if (entry.getKey().contains("Points")) {
-                        response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
-                    }
-                }
-                response.append("\n" + season + "-" + (season + 1) + " Assists Percentage: \n");
-                for (Map.Entry<String, Object> entry : seasonalOrPlayoffList.entrySet()) {
-                    if (entry.getKey().contains("Assists")) {
-                        response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
-                    }
-                }
-                response.append("\n" + season + "-" + (season + 1) + " Rebounds Percentage: \n");
-                for (Map.Entry<String, Object> entry : seasonalOrPlayoffList.entrySet()) {
-                    if (entry.getKey().contains("Rebounds")) {
-                        response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
-                    }
-                }
-                response.append("\n" + season + "-" + (season + 1) + " Threes Percentage: \n");
-                for (Map.Entry<String, Object> entry : seasonalOrPlayoffList.entrySet()) {
-                    if (entry.getKey().contains("Threes")) {
-                        response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
-                    }
-                }
-                //response.append("\n" + season + "-" + (season + 1) + " Opponent Team Lineup: \n");
-                /*for (Map.Entry<String, Object> entry : teamLineup.entrySet()) {
+                response.append("\n" + previousYear + "-" + season + " Stats & Percentages: \n");
+                for (Map.Entry<String, Object> entry : pointPercentage.entrySet()) {
                     response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
-                }*/
-                csv.writeToCSV(seasonalOrPlayoffList, csvFileName);
-                responseTextArea.setText(response.toString());
+                }
+                for (Map.Entry<String, Object> entry : assistPercentage.entrySet()) {
+                    response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
+                }
+                for (Map.Entry<String, Object> entry : reboundPercentage.entrySet()) {
+                    response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
+                }
+                for (Map.Entry<String, Object> entry : threePercentage.entrySet()) {
+                    response.append("    " + entry.getKey()).append(": ").append(entry.getValue()).append("    \n");
+                }
+                csv.writeToCSV(pointPercentage, playerName + "_" + opponent + "_" + season + "_seasonal_points.csv");
+                csv.writeToCSV(pointPercentage, playerName + "_" + opponent + "_" + season + "_seasonal_assists.csv");
+                csv.writeToCSV(pointPercentage, playerName + "_" + opponent + "_" + season + "_seasonal_rebounds.csv");
+                csv.writeToCSV(pointPercentage, playerName + "_" + opponent + "_" + season + "_seasonal_threes.csv");
 
-            } catch (IOException | InterruptedException ex) {
+                responseTextArea.setText(response.toString());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Error fetching data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
+            } catch (ParseException ex) {
+                throw new RuntimeException(ex);
             }
         });
 
