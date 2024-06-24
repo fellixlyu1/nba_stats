@@ -1,6 +1,10 @@
 import csv
 
 
+# The 'get_cross' method uses the reader method from the csv library. The data from the csv file is created from the
+# main.py file and will be used as a parameter. The 'stat' parameter inside the 'get_cross' method is the parameter
+# that determines the statistic that the user wishes to analyze. The user will offer the choices: 'Points', 'Assists',
+# 'Rebounds', and 'Threes'.
 def get_cross(csv_file, stat):
     minute = 0
     amount = 0

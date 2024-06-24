@@ -1,15 +1,17 @@
 import csv
 from datetime import datetime
-from percentages import get_prediction
 
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
+# Using matplotlib, we have to set up the backend before we can begin using the tools in matplotlib
 matplotlib.use('TkAgg')
 
 
+# The 'load_dates_from_csv' method uses the data from the csv files created from the 'league_game_finder.py' file
+# and the dates from the player data extracted from the csv file.
 def load_dates_from_csv(csv_data):
     dates = []
     with open(csv_data) as csv_file:
@@ -21,47 +23,37 @@ def load_dates_from_csv(csv_data):
     return dates
 
 
-def create_scatterplot(csv_data, opp_csv, stat, date, position):
-    opp1 = csv_data[15:] + "_" + stat
-    opp2 = opp_csv[15:] + "_" + stat
+# The 'create_scatter_plot' method uses the player csv file and allows the user to find the statistic column from
+# the csv data. This method uses pandas and plt from matplotlib. This method will create a scatter plot graph.
+# In the future, this project will apply an AI/ML algorithm to show the projection of the player's next game.
+def create_scatter_plot(csv_data, stat):
 
-    dates1 = load_dates_from_csv(csv_data)
-    dates2 = load_dates_from_csv(opp_csv)
+    dates = load_dates_from_csv(csv_data)
 
     player_data = load_data_from_csv(csv_data, stat)
-    opp_data = load_data_from_csv(opp_csv, stat)
 
-    predictive_range = get_prediction(csv_data, opp_csv, stat, position)
-
-    avg = predictive_range.keys()
-    other = list(predictive_range.values())
-
-    df = pd.DataFrame(player_data, columns=['value'], index=dates1)
-    d2f = pd.DataFrame(opp_data, columns=['value'], index=dates2)
+    df = pd.DataFrame(player_data, columns=['value'], index=dates)
 
     area = 2.5
 
     x = df.index
-    x2 = d2f.index
-
     y = df['value']
-    y2 = d2f['value']
 
     plt.plot(x, y)
-    plt.plot(x2, y2)
 
-    plt.scatter(x=x, y=y, c="red", s=area, label=opp1)
-    plt.scatter(x=x2, y=y2, c="green", s=area, label=opp2)
+    plt.scatter(x, y, c="blue", s=area, label='Predictive Range')
 
-    for i, (avg_val, other_vals) in enumerate(zip(avg, other)):
-        plt.axhline(y=avg_val, color='gray', linestyle='--', label='Predictive Average' if i == 0 else None)
-        plt.scatter([date] * len(other_vals), other_vals, c="blue", s=area, label='Predictive Range' if i == 0 else None)
-
+    plt.title(f'{stat} vs Date')
+    plt.xlabel('Date')
+    plt.ylabel(stat)
     plt.legend()
     plt.gcf().autofmt_xdate()
+
     plt.show()
 
 
+# The 'load_data_from_csv' method is used to load the data from the csv file and extract the data for the player's
+# 'Points', 'Assists', 'Rebounds', and 'Threes' in each of the games they've played throughout the player's career.
 def load_data_from_csv(csv_data, stats):
     data = []
     with open(csv_data) as csv_file:
