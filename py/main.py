@@ -7,19 +7,24 @@ from py.percentages import get_prediction_plots
 from py.team_link import whole_team_analysis
 
 
+# The 'create_button' method uses the 'system' function using the 'os' module and uses the 'league_game_finder.py'
+# file and its connected api and opens the window for creating csv files based on the player.
 def create_button():
     os.system("league_game_finder.py")
     create_window()
 
 
+# The 'analyze_button' method opens the window for analyzing the player's games in their most recent year/season.
 def analyze_button():
     analyze_window()
 
 
+# The 'report_button' method opens the window for the player's projection numbers for the player's next game(s).
 def report_button():
     report_window()
 
 
+# The 'team_button' method opens the window for the player's team and compares the player's teammates statistics.
 def team_button():
     team_window()
 
@@ -29,6 +34,8 @@ def run():
     threading.Thread(target=get_player_stats).start()
 
 
+# The 'create_window' method accesses the 'league_game_finder.py' file and it's methods. This method creates the
+# csv file according to the user's choices.
 def create_window():
     cw = Tk()
     cw.resizable(width=True, height=True)
@@ -58,6 +65,8 @@ def create_window():
     cw.mainloop()
 
 
+# The 'analyze_window' method uses the 'get_scatter_plot' method and returns the scatter plot graph of the player's most
+# recent season and year.
 def analyze_window():
     aw = Tk()
     aw.resizable(width=True, height=True)
@@ -90,6 +99,8 @@ def analyze_window():
     stat_button.grid(row=4, column=1)
 
 
+# The 'report_window' method uses the 'get_prediction_plots' method and returns the projection numbers based on
+# the 'Home' or 'Away' games that player's played against the opponent team that the player is facing.
 def report_window():
     rw = Tk()
     rw.resizable(width=True, height=True)
@@ -139,6 +150,8 @@ def report_window():
     rw.mainloop()
 
 
+# The 'team_window' will need the respective csv files of all the teammates in the player's team and compares their
+# statistics. This method is used to analyze the teammates and their statistical differences in the player's games.
 def team_window():
     tw = Tk()
     tw.resizable(width=True, height=True)

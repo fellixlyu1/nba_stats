@@ -57,6 +57,10 @@ def get_prediction(players_csv, opp_code, stats, position, team_code):
     return prediction_range
 
 
+# The 'get_prediction_plots' method was originally going to show the future plots in the scatter plot graph using
+# matplotlib. However, the plots are now considered the projection numbers based on the games against the opponent team
+# that the player would be facing. The method will return the possible numbers by calculating the percentage increase
+# or decrease and multiply that number with the player's most recent game.
 def get_prediction_plots(opp_code, players_csv, stats, position, team):
     pred_range = get_prediction(players_csv, opp_code, stats, position, team)
 
